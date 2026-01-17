@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Check</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav>
+  <a href="index.html">Home</a>
+  <a href="check.html">Check</a>
+  <a href="about.html">About Us</a>
+</nav>
+
+<div class="container">
+  <div class="content">
+
+    <h2>Teachable Machine Image Model</h2>
+    <br>
+
+    <button onclick="init()">โหลดโมเดล</button>
+    <br><br>
+
+    <label for="imageUpload">เลือกภาพ</label>
+    <input id="imageUpload" type="file" accept="image/*" onchange="handleImageUpload(event)">
+
+    <br><br>
+    <div id="result">ยังไม่มีผลลัพธ์</div>
+
+  </div>
+</div>
+
+<!-- TensorFlow & Teachable Machine -->
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+
+<script>
+  const URL = "https://teachablemachine.withgoogle.com/models/wbLIlGUas/";
+  let model;
+
+  // โหลดโมเดล
+  async function init() {
+    const modelURL = URL + "model.json";
+    const metadataURL = URL + "metadata.json";
+
+    model = await tmImage.load(modelURL, metadataURL);
+    document.getElementById("result").innerHTML = "โหลดโมเดลเรียบร้อยแล้ว ✅";
+  }
+
+  // เลือกภาพ
+  function handleImageUpload(event) {
+    const file = event.target.files[0];
+    if (!file || !model) {
+      alert("กรุณาโหลดโมเดลก่อน");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function () {
+      const img = new Image();
+      img.src = reader.result;
+      img.onload = () => predict(img);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // ทำนายผล
+  async function predict(image) {
+    const predictions = await model.predict(image);
+
+    let bestPrediction = predictions[0];
+    for (let i = 1; i < predictions.length; i++) {
+      if (predictions[i].probability > bestPrediction.probability) {
+        bestPrediction = predictions[i];
+      }
+    }
+
+    document.getElementById("result").innerHTML =
+      "ผลลัพธ์: <b>" + bestPrediction.className + "</b><br>" +
+      "ความน่าจะเป็น: " + (bestPrediction.probability * 100).toFixed(2) + "%";
+  }
+</script>
+
+</body>
+</html>
